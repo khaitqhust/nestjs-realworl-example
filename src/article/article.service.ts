@@ -5,7 +5,7 @@ import { getRepository, Repository } from "typeorm";
 import { CommentEntity } from "./comment.entity";
 import { UserEntity } from "../user/user.entity";
 import { FollowsEntity } from "../profile/follows.entity";
-import { ArticlesRO } from "./article.interface";
+import { ArticleRO, ArticlesRO } from "./article.interface";
 
 @Injectable()
 export class ArticleService {
@@ -50,4 +50,32 @@ export class ArticleService {
     const articles = await qb.getMany()
     return {articles, articlesCount}
   }
+
+  async findFeed(userId: number, query): Promise<ArticlesRO> {
+    const _follows = await this.followsRepository.find({followerId: userId})
+    if (!(Array.isArray(_follows) && _follows.length > 0)) {
+      return {articles: [], articlesCount: 0}
+    }
+
+    const ids = _follows.map(el => el.followingId)
+    const qb = await getRepository(ArticleEntity).createQueryBuilder("article").where("article.authorId IN (:ids)", { ids })
+    qb.orderBy("article.created", "DESC")
+
+    const articlesCount = await qb.getCount()
+    if ("limit" in query) {
+      qb.limit(query.limit)
+    }
+    if ("offset" in query) {
+      qb.offset(query.offset)
+    }
+    const articles = await qb.getMany()
+    return {articles, articlesCount}
+  }
+
+  async findOne(where): Promise<ArticleRO> {
+    const article = await this.articleRepository.findOne(where)
+    return { article }
+  }
+
+
 }
