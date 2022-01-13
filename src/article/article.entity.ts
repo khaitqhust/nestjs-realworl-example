@@ -48,7 +48,7 @@ export class ArticleEntity {
     eager: true,
   })
   @JoinColumn()
-  comments: Comment[]
+  comments: CommentEntity[]
 
   @Column({ default: 0 })
   favoriteCount: number
